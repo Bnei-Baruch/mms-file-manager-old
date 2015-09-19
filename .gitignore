@@ -2,10 +2,13 @@
 *.o
 *.a
 *.so
+# IDE
+.idea
 
 # Folders
 _obj
 _test
+file_manager/tmp
 
 # Architecture specific extensions/prefixes
 *.[568vq]

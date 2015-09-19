@@ -9,5 +9,3 @@ script: "cd file_manager && go test"
 before_install:
 #  - export GOPATH=/home/travis/gopath
   - export PATH=$GOPATH/bin:$PATH
-
-install: make

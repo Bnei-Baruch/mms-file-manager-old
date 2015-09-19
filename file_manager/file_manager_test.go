@@ -2,7 +2,7 @@ package file_manager_test
 
 import (
 	"fmt"
-	fm "github.com/Bnei-Baruch/mms/file_manager"
+	fm "github.com/Bnei-Baruch/mms-file-manager/file_manager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"io/ioutil"

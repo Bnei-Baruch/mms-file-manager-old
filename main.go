@@ -1,7 +1,7 @@
 package main
 
 import (
-	fm "github.com/Bnei-Baruch/mms/file_manager"
+	fm "github.com/Bnei-Baruch/mms-file-manager/file_manager"
 )
 
 func main() {

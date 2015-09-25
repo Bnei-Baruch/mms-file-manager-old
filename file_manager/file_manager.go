@@ -1,6 +1,8 @@
 package file_manager
 
 import (
+	logger "github.com/Bnei-Baruch/mms-file-manager/logger"
+
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -17,19 +19,28 @@ type updateMsg struct {
 
 type fileCacher map[string]updateMsg
 
-var watchDirCacher = make(map[string]bool)
-
-var config struct {
-	updates chan<- updateMsg
-	done    chan bool
-}
+var (
+	watchDirCacher = make(map[string]bool)
+	config         struct {
+		updates chan<- updateMsg
+		done    chan bool
+	}
+	l *log.Logger = nil
+)
 
 type watchPair map[string]string
 type watchPairs []watchPair
 
+func Logger(params *logger.LogParams) {
+	l = logger.InitLogger(params)
+}
+
 func NewFM(configFile ...interface{}) error {
 	config.updates = stateMonitor(2 * time.Second)
 	config.done = make(chan bool)
+	if l == nil {
+		l = logger.InitLogger(&logger.LogParams{LogPrefix: "[FM] "})
+	}
 
 	if configFile != nil {
 		if watch, err := readConfigFile(configFile[0]); err != nil {
@@ -39,7 +50,7 @@ func NewFM(configFile ...interface{}) error {
 				return fmt.Errorf("%q key not found in config file", "watch")
 			}
 			for _, pair := range watch {
-				fmt.Println("Starting to watch: ", pair["source"], pair["target"])
+				l.Println("Starting to watch: ", pair["source"], pair["target"])
 				if err := Watch(pair["source"], pair["target"]); err != nil {
 					return err
 				}
@@ -52,7 +63,7 @@ func NewFM(configFile ...interface{}) error {
 
 func readConfigFile(configFile interface{}) (watch watchPairs, err error) {
 	yml := make(map[string]watchPairs)
-	log.Println("Reading custom configuration file", configFile)
+	l.Println("Reading custom configuration file", configFile)
 	if configFileName, ok := configFile.(string); ok {
 		var file []byte
 
@@ -66,12 +77,9 @@ func readConfigFile(configFile interface{}) (watch watchPairs, err error) {
 		return nil, fmt.Errorf("File name should be string")
 	}
 
-	log.Printf("Found watch %v", watch)
-
 	return yml["watch"], nil
 }
 func Destroy() {
-	fmt.Println("file manager destroyed")
 	close(config.updates)
 	close(config.done)
 	watchDirCacher = make(map[string]bool)
@@ -79,7 +87,7 @@ func Destroy() {
 
 func Watch(watchDir, targetDir string) error {
 	if _, ok := watchDirCacher[watchDir]; ok {
-		fmt.Println("############!!!Directory %s is already watched", watchDir)
+		l.Println("############!!!Directory %s is already watched", watchDir)
 		return fmt.Errorf("Directory %q is already watched", watchDir)
 	}
 	watchDirCacher[watchDir] = true
@@ -105,7 +113,7 @@ func stateMonitor(updateInterval time.Duration) chan<- updateMsg {
 		for {
 			select {
 			case <-config.done:
-				fmt.Println("Exiting stateMonitor")
+				l.Println("Exiting stateMonitor")
 				wg.Wait()
 				return
 			case <-ticker.C:
@@ -126,14 +134,13 @@ func stateMonitor(updateInterval time.Duration) chan<- updateMsg {
 }
 
 func logState(fc *fileCacher) {
-	log.Println("Current state:")
+	l.Println("Current state:")
 	for k, v := range *fc {
-		log.Printf(" %s %s\n", k, v.targetDir)
+		l.Printf(" %s %s\n", k, v.targetDir)
 	}
 }
 
 func handler(u updateMsg) {
-	log.Println("Inside Handler", u.file, u.targetDir)
 
 	os.Rename(u.file, filepath.Join(u.targetDir, filepath.Base(u.file)))
 }
@@ -142,13 +149,13 @@ func watch(watchDir, targetDir string) {
 	for {
 		select {
 		case <-config.done:
-			fmt.Println("Exiting watch", watchDir)
+			l.Println("Exiting watch", watchDir)
 			return
 		default:
 			filepath.Walk(watchDir, func(path string, info os.FileInfo, err error) error {
 				if info != nil && info.Mode().IsRegular() {
 					config.updates <- updateMsg{path, targetDir}
-					log.Println("Walk: ", path)
+					l.Println("Walk: ", path)
 				}
 
 				return nil

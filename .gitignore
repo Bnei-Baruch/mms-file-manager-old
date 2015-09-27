@@ -25,3 +25,9 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+.env.test
+.env
+.DS_Store
+
+/mms-file-manager

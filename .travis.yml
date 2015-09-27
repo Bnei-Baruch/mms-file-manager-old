@@ -3,6 +3,8 @@ language: go
 go:
   - 1.5
 
+sudo: true
+
 script: "cd file_manager && go test"
 
 before_install:

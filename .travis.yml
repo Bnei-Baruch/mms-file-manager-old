@@ -7,3 +7,9 @@ script: "cd file_manager && go test"
 
 before_install:
   - export PATH=$GOPATH/bin:$PATH
+  - export DATABASE_URL=localhost:28015
+
+before_script:
+  - sudo add-apt-repository ppa:rethinkdb/ppa -y
+  - sudo apt-get update -q
+  - sudo apt-get install rethinkdb

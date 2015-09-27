@@ -12,7 +12,7 @@ before_install:
   - export DATABASE_URL=localhost:28015
 
 before_script:
-  - sudo add-apt-repository -y ppa:rethinkdb/ppa
+  - sudo add-apt-repository -y http://download.rethinkdb.com/apt
   - sudo apt-get update
   - sudo apt-get install rethinkdb
   - sudo rethinkdb --bind all &

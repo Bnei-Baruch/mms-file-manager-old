@@ -5,7 +5,7 @@ go:
 
 sudo: true
 
-script: "$GOPATH/bin/ginkgo -noisyPendings=false -progress=true -randomizeAllSpecs=true -r=true"
+script: "go test ./..."
 
 before_install:
   - export PATH=$GOPATH/bin:$PATH

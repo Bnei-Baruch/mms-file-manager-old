@@ -5,7 +5,6 @@ go:
 
 sudo: true
 
-script: "cd file_manager && go test"
 script: "ginkgo -noisyPendings=false -progress=true -randomizeAllSpecs=true -r=true"
 
 before_install:

@@ -1,11 +1,11 @@
 language: go
 os: osx
 go:
-  - 1.5
+  - 1.5.1
 
 sudo: true
 
-script: "ginkgo -noisyPendings=false -progress=true -randomizeAllSpecs=true -r=true"
+script: "$GOPATH/bin/ginkgo -noisyPendings=false -progress=true -randomizeAllSpecs=true -r=true"
 
 before_install:
   - export PATH=$GOPATH/bin:$PATH

@@ -31,3 +31,4 @@ _testmain.go
 .DS_Store
 
 /mms-file-manager
+/rethinkdb_data

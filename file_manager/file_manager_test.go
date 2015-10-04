@@ -3,10 +3,10 @@ package file_manager_test
 import (
 	"fmt"
 	fm "github.com/Bnei-Baruch/mms-file-manager/file_manager"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -57,16 +57,16 @@ aaa:
 					Fail(fmt.Sprintf("Unable to write to temp config file: %v", err))
 				}
 
-				if fileManager, err = fm.NewFM(file.Name()); err != nil {
-					log.Printf("Unable to initialize file manager: %v", err)
-				}
+				dropDB()
+				fileManager, err = fm.NewFM(dbName, file.Name())
 
 				if fileManager != nil {
-					fileManager.Destroy()
+					defer fileManager.Destroy()
 				}
 
 				os.Remove(file.Name())
 
+				Ω(fileManager).Should(BeNil())
 				Ω(err).Should(HaveOccurred())
 			}
 		})
@@ -107,7 +107,8 @@ watch:
 				Fail("Unable to remove target dir2")
 			}
 
-			if fileManager, err = fm.NewFM(file.Name()); err != nil {
+			dropDB()
+			if fileManager, err = fm.NewFM(dbName, file.Name()); err != nil {
 				Fail(fmt.Sprintf("Unable to initialize FileManager: %v", err))
 			}
 			defer fileManager.Destroy()
@@ -135,7 +136,8 @@ watch:
 		Context("Having one file manager", func() {
 
 			BeforeEach(func() {
-				if fileManager, err = fm.NewFM(); err != nil {
+				dropDB()
+				if fileManager, err = fm.NewFM(dbName); err != nil {
 					Fail(fmt.Sprintf("Unable to initialize FileManager: %v", err))
 				}
 				if err = os.RemoveAll(watchDir); err != nil {
@@ -146,6 +148,7 @@ watch:
 					Fail("Unable to remove target dir")
 				}
 			})
+
 			AfterEach(func() {
 				fileManager.Destroy()
 			})
@@ -158,9 +161,6 @@ watch:
 			})
 
 			It("must create source and target directories if not exist", func() {
-
-				l.Println("------- must create source and target directories if not exist")
-
 				fileManager.Watch(watchDir, targetDir)
 
 				_, err = os.Stat(watchDir)
@@ -207,7 +207,6 @@ watch:
 			})
 
 			It("must copy 2 new files to target dir", func() {
-				l.Println("------- must copy 2 new files to target dir")
 				watchFile2 := filepath.Join(watchDir, "file2.txt")
 				targetFile2 := filepath.Join(targetDir, "file2.txt")
 
@@ -228,12 +227,19 @@ watch:
 				}, 3*time.Second).ShouldNot(HaveOccurred())
 			})
 
-			XIt("must create a file record in db", func() {
+			XIt("must create only one file record in db", func() {
+
+			})
+			It("must create a file record in db", func() {
 				fileManager.Watch(watchDir, targetDir)
 
 				//remove file record from db if exists
 				createTestFile(watchFile)
+
 				//check that file is in db
+				file, err := fileManager.FindOneFile(filepath.Base(watchFile))
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(file).ShouldNot(BeNil())
 			})
 		})
 
@@ -247,10 +253,11 @@ watch:
 			targetFile2 := filepath.Join(targetDir2, "file2.txt")
 
 			BeforeEach(func() {
-				if fileManager, err = fm.NewFM(); err != nil {
+				dropDB()
+				if fileManager, err = fm.NewFM(dbName); err != nil {
 					Fail(fmt.Sprintf("Unable to initialize FileManager: %v", err))
 				}
-				if fileManager2, err = fm.NewFM(); err != nil {
+				if fileManager2, err = fm.NewFM(dbName); err != nil {
 					Fail(fmt.Sprintf("Unable to initialize FileManager2: %v", err))
 				}
 
@@ -289,10 +296,11 @@ watch:
 				fileManager.Destroy()
 				fileManager2.Destroy()
 
-				if fileManager, err = fm.NewFM(); err != nil {
+				dropDB()
+				if fileManager, err = fm.NewFM(dbName); err != nil {
 					Fail(fmt.Sprintf("Unable to initialize FileManager: %v", err))
 				}
-				if fileManager2, err = fm.NewFM(); err != nil {
+				if fileManager2, err = fm.NewFM(dbName); err != nil {
 					Fail(fmt.Sprintf("Unable to initialize FileManager2: %v", err))
 				}
 

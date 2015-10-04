@@ -1,15 +1,20 @@
 package config
 
 import (
+	"fmt"
 	r "github.com/dancannon/gorethink"
 	"log"
 	"os"
 	"time"
 )
 
-func InitDB(dbName string) *r.Session {
+var tables = [...]string{
+	"files",
+}
 
-	session, err := r.Connect(r.ConnectOpts{
+func InitDB(dbName string) (session *r.Session, err error) {
+
+	session, err = r.Connect(r.ConnectOpts{
 		Address:  os.Getenv("RETHINKDB_URL"),
 		Database: dbName,
 		MaxIdle:  10,
@@ -18,10 +23,18 @@ func InitDB(dbName string) *r.Session {
 
 	if err != nil {
 		log.Println(err)
+		return
 	}
-	if err = r.DBCreate(dbName).Exec(session); err != nil {
-		log.Println(err)
+	if res, err := r.DBCreate(dbName).RunWrite(session); err != nil {
+		log.Println(res, err)
+		if res.Errors > 0 {
+			return nil, fmt.Errorf(res.FirstError)
+		}
 	}
 
-	return session
+	for table := range tables {
+		r.DB(dbName).TableCreate(table).RunWrite(session)
+	}
+
+	return
 }

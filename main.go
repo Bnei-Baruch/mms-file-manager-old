@@ -2,23 +2,25 @@ package main
 
 import (
 	"fmt"
-	"github.com/Bnei-Baruch/mms-file-manager/config"
+	fm "github.com/Bnei-Baruch/mms-file-manager/file_manager"
 	"github.com/joho/godotenv"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 func main() {
 	watchDir, targetDir := "tmp/source", "tmp/target"
 
 	godotenv.Load(".env")
-	app := config.NewApp("mms_prod")
 
-	app.FM.Watch(watchDir, targetDir)
+	fm, err := fm.NewFM("mms_prod")
+	if err != nil {
+		panic(err)
+	}
+	defer fm.Destroy()
 
-	defer app.Destroy()
+	fm.Watch(watchDir, targetDir)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -26,13 +28,16 @@ func main() {
 	go func() {
 		<-c
 		fmt.Println("Bye Bye")
-		app.Destroy()
+		fm.Destroy()
 		os.Exit(0)
 	}()
 
-	for {
-		fmt.Println("sleeping...")
-		time.Sleep(10 * time.Second) // or runtime.Gosched() or similar per @misterbee
-	}
-
+	quit := make(chan bool, 1)
+	/*
+		for {
+			fmt.Println("sleeping...")
+			time.Sleep(10 * time.Second) // or runtime.Gosched() or similar per @misterbee
+		}
+	*/
+	<-quit
 }

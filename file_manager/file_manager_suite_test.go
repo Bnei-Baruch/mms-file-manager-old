@@ -20,17 +20,36 @@ func TestFileManager(t *testing.T) {
 }
 
 var (
-	l      *log.Logger = nil
-	dbName             = "mms_test"
+	l       *log.Logger = nil
+	dbName              = "mms_test"
+	session *r.Session  = nil
 )
-
 var _ = BeforeSuite(func() {
 	// Load test ENV variables
 	godotenv.Load("../.env.test")
 
+	var err error
+	if session == nil {
+		session, err = r.Connect(r.ConnectOpts{
+			Address:  os.Getenv("RETHINKDB_URL"),
+			Database: dbName,
+			MaxIdle:  10,
+			Timeout:  time.Second * 10,
+		})
+
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
 	dropDB()
 	fm.Logger(&logger.LogParams{LogMode: "screen", LogPrefix: "[FM] "})
 	l = logger.InitLogger(&logger.LogParams{LogMode: "screen", LogPrefix: "[FM-TEST] "})
+})
+
+var _ = AfterSuite(func() {
+	dropDB()
 })
 
 func createTestFile(fileName string) {
@@ -45,22 +64,13 @@ func createTestFile(fileName string) {
 }
 
 func dropDB() {
-	return
-	session, err := r.Connect(r.ConnectOpts{
-		Address:  os.Getenv("RETHINKDB_URL"),
-		Database: dbName,
-		MaxIdle:  10,
-		Timeout:  time.Second * 10,
-	})
+	var res *r.Cursor
 
+	res, err = r.DB(dbName).TableList().ForEach(func(name r.Term) interface{} {
+		r.DB(dbName).Table(name).Delete()
+		return name
+	}).Run(session)
 	if err != nil {
-		log.Println(err)
-		return
-	}
-	if res, err := r.DBDrop(dbName).RunWrite(session); err != nil {
 		log.Println(res, err)
-		if res.Errors > 0 {
-			log.Println(res.FirstError)
-		}
 	}
 }

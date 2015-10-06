@@ -182,7 +182,10 @@ func logState(fc *fileCacher) {
 func (fm *FileManager) handler(u updateMsg) {
 	fileName := filepath.Base(u.file)
 	os.Rename(u.file, filepath.Join(u.targetDir, fileName))
-	fm.CreateFileRecord(u.file)
+	if _, err := fm.CreateFileRecord(u.file); err != nil {
+		//l.Panic(err)
+	}
+
 }
 
 func (fm *FileManager) watch(watchDir, targetDir string) {
